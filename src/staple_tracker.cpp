@@ -1397,3 +1397,8 @@ cv::Rect STAPLE_TRACKER::tracker_staple_update(const cv::Mat &im)
 
     return location;
 }
+
+void STAPLE_TRACKER::trackerStapleInit(cv::Mat template_img, cv::Rect init_ROI) {
+    tracker_staple_initialize(template_img, init_ROI);
+    tracker_staple_train(template_img, true);
+}

@@ -68,6 +68,7 @@ public:
     cv::Rect tracker_staple_update(const cv::Mat &im);
 
     double getMaxPro();
+    void trackerStapleInit(cv::Mat template_img, cv::Rect init_ROI);
 
 protected:
     staple_cfg default_parameters_staple(staple_cfg cfg);

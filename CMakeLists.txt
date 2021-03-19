@@ -20,7 +20,7 @@ find_package(Eigen3 REQUIRED)
 catkin_package()
 
 include_directories(
-        # include
+        include
         ${catkin_INCLUDE_DIRS}
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
@@ -37,11 +37,17 @@ target_link_libraries(STAPLE
         )
 
 
-add_executable(tracker_yolo
-        App/tracker_yolo.cpp
-        )
-target_link_libraries(tracker_yolo
+add_executable(yolo_staple_node
+        App/yolo_staple_node.cpp)
+target_link_libraries(yolo_staple_node
         ${catkin_LIBRARIES}
         ${OpenCV_LIBS}
         STAPLE
+        )
+
+add_executable(video_publisher_node
+        App/video_publisher_node.cpp)
+target_link_libraries(video_publisher_node
+        ${catkin_LIBRARIES}
+        ${OpenCV_LIBS}
         )

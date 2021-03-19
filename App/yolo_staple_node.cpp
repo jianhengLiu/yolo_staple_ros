@@ -18,35 +18,25 @@ using namespace cv;
 
 ros::ServiceClient client;
 
-string tracking_label = "xxx";
+string tracking_label = "land";
+double confidence_level = 0.3;// 0.2-0.4
 
 bool is_tracking = false;
 STAPLE_TRACKER staple;
-
-void trackerStapleInit(Mat template_img, cv::Rect init_ROI) {
-    namedWindow("STAPLE", cv::WINDOW_AUTOSIZE);
-
-    staple.tracker_staple_initialize(template_img, init_ROI);
-    staple.tracker_staple_train(template_img, true);
-}
-
 void trackerStaple(cv::Mat input) {
-    if (!is_tracking) {
-        std::cout << "STAPLE tracker is not initialized!" << std::endl;
-        return;
-    }
 
     cv::Rect_<float> location = staple.tracker_staple_update(input);
     staple.tracker_staple_train(input, false);
 
-    if (staple.getMaxPro() < 0.2) {
+    cout << "staple.getMaxPro()=" << staple.getMaxPro() << endl;
+    if (staple.getMaxPro() < confidence_level) {
         is_tracking = false;
     }
 
     cv::rectangle(input, location, cv::Scalar(0, 128, 255), 2);
-                cv::putText(input, tracking_label, location.tl(), cv::FONT_HERSHEY_COMPLEX,
-                            1, cv::Scalar(0, 0, 255),
-                            1, 0);
+    cv::putText(input, tracking_label, location.tl(), cv::FONT_HERSHEY_COMPLEX,
+                1, cv::Scalar(0, 0, 255),
+                1, 0);
 
     cv::imshow("STAPLE", input);
     cv::waitKey(1);
@@ -66,17 +56,21 @@ void callbackCamera(const sensor_msgs::ImageConstPtr &img_msg) {
                 auto xyxy = result.bbox.xyxy;
                 cv::Point p1(xyxy[0], xyxy[1]), p2(xyxy[2], xyxy[3]);
 
+                cout << "result.label:" << result.label << endl;
                 if (result.label == tracking_label) {
                     cv::Rect init_ROI = cv::Rect(p1, p2);
-                    trackerStapleInit(img, init_ROI);
+                    staple.trackerStapleInit(img, init_ROI);
                     is_tracking = true;
+                    cout << "initialization succed！" << endl;
+                    continue;
                 }
             }
         } else {
             ROS_ERROR("request fail");
         }
+    }else {
+        trackerStaple(img);
     }
-    trackerStaple(img);
 }
 
 int main(int argc, char **argv) {
@@ -85,13 +79,12 @@ int main(int argc, char **argv) {
     ros::Rate loop_rate(200);
 
     image_transport::ImageTransport it(nh);
-    image_transport::Subscriber subFloorCamera = it.subscribe("undistortFisheye", 100, callbackCamera);
+    image_transport::Subscriber subFloorCamera = it.subscribe("video_publisher", 1, callbackCamera);
 
     client = nh.serviceClient<ros_yolo::yolo>("yolo_service");
     client.waitForExistence(ros::Duration(30e-3));
 
     ros::spin();
-
     ros::waitForShutdown();
     return 0;
 }
